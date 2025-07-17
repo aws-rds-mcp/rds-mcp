@@ -25,9 +25,9 @@ from ...common.decorators.readonly_check import readonly_check
 from ...common.server import mcp
 from ...common.utils import (
     add_mcp_tags,
-    format_instance_info,
     format_rds_api_response,
 )
+from .utils import format_instance_info
 from loguru import logger
 from mcp.server.fastmcp import Context as FastMCPContext
 from pydantic import Field

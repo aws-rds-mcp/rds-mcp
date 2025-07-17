@@ -25,6 +25,7 @@ from ...common.server import mcp
 from ...common.utils import (
     format_rds_api_response,
 )
+from .utils import format_instance_info
 from loguru import logger
 from mcp.server.fastmcp import Context as FastMCPContext
 from pydantic import Field
@@ -197,4 +198,6 @@ async def modify_db_instance(
 
     result = format_rds_api_response(response)
     result['message'] = SUCCESS_MODIFIED.format(f'DB instance {db_instance_identifier}')
+    result['formatted_instance'] = format_instance_info(result.get('DBInstance', {}))
+
     return result

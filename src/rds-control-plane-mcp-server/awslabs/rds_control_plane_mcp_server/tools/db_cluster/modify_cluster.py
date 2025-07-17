@@ -23,9 +23,9 @@ from ...common.decorators.handle_exceptions import handle_exceptions
 from ...common.decorators.readonly_check import readonly_check
 from ...common.server import mcp
 from ...common.utils import (
-    format_cluster_info,
     format_rds_api_response,
 )
+from .utils import format_cluster_info
 from loguru import logger
 from mcp.server.fastmcp import Context as FastMCPContext
 from pydantic import Field
@@ -99,7 +99,7 @@ async def modify_db_cluster(
     """
     rds_client = RDSConnectionManager.get_connection()
 
-    params = {
+    params: Dict[str, Any] = {
         'DBClusterIdentifier': db_cluster_identifier,
     }
 
