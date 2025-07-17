@@ -14,8 +14,8 @@
 
 """General utility functions for the RDS Control Plane MCP Server."""
 
-from ..constants import MCP_SERVER_VERSION
-from ..context import RDSContext
+from .constants import MCP_SERVER_VERSION
+from .context import RDSContext
 from botocore.client import BaseClient
 from typing import Any, Callable, Dict, List, TypeVar
 

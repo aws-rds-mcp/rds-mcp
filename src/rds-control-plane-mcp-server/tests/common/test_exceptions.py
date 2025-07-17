@@ -16,15 +16,15 @@
 
 import json
 import pytest
-from awslabs.rds_control_plane_mcp_server.common.exceptions import (
-    ConfirmationRequiredException,
-    ReadOnlyModeException,
-    handle_exceptions,
-)
-from awslabs.rds_control_plane_mcp_server.constants import (
+from awslabs.rds_control_plane_mcp_server.common.constants import (
     ERROR_CLIENT,
     ERROR_READONLY_MODE,
     ERROR_UNEXPECTED,
+)
+from awslabs.rds_control_plane_mcp_server.common.decorators.handle_exceptions import (
+    ConfirmationRequiredException,
+    ReadOnlyModeException,
+    handle_exceptions,
 )
 from botocore.exceptions import ClientError
 from unittest.mock import patch

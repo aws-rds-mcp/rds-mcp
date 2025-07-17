@@ -16,9 +16,6 @@
 
 import asyncio
 from ...common.connection import RDSConnectionManager
-from ...common.constants import (
-    SUCCESS_FAILED_OVER,
-)
 from ...common.decorators.handle_exceptions import handle_exceptions
 from ...common.decorators.readonly_check import readonly_check
 from ...common.decorators.require_confirmation import require_confirmation
@@ -31,6 +28,9 @@ from mcp.server.fastmcp import Context as FastMCPContext
 from pydantic import Field
 from typing import Any, Dict, Optional
 from typing_extensions import Annotated
+
+
+SUCCESS_FAILED_OVER = '{} has been failed over successfully.'
 
 
 FAILOVER_CLUSTER_TOOL_DESCRIPTION = """Force a failover for an RDS database cluster.

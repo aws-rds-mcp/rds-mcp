@@ -15,15 +15,15 @@
 """Tests for the confirmation module in the RDS Control Plane MCP Server."""
 
 import pytest
-from awslabs.rds_control_plane_mcp_server.common.confirmation import (
+from awslabs.rds_control_plane_mcp_server.common.decorators.handle_exceptions import (
+    ConfirmationRequiredException,
+    ReadOnlyModeException,
+)
+from awslabs.rds_control_plane_mcp_server.common.decorators.require_confirmation import (
     _pending_operations,
     add_pending_operation,
     readonly_check,
     require_confirmation,
-)
-from awslabs.rds_control_plane_mcp_server.common.exceptions import (
-    ConfirmationRequiredException,
-    ReadOnlyModeException,
 )
 from unittest.mock import patch
 

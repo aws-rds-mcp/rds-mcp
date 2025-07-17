@@ -16,7 +16,7 @@
 
 import asyncio
 from ...common.connection import RDSConnectionManager
-from ...common.exceptions import handle_exceptions
+from ...common.decorators.handle_exceptions import handle_exceptions
 from ...common.server import mcp
 from loguru import logger
 from mypy_boto3_rds.type_defs import DBInstanceTypeDef
