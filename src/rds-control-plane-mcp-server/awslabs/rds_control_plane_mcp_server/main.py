@@ -17,8 +17,8 @@
 import argparse
 import awslabs.rds_control_plane_mcp_server.resources  # noqa: F401 - imported for side effects to register tools
 import awslabs.rds_control_plane_mcp_server.tools  # noqa: F401 - imported for side effects to register tools
+from awslabs.rds_control_plane_mcp_server.common.context import RDSContext
 from awslabs.rds_control_plane_mcp_server.common.server import mcp
-from awslabs.rds_control_plane_mcp_server.context import RDSContext
 from loguru import logger
 
 

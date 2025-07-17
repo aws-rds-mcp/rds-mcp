@@ -15,15 +15,16 @@
 """Tool to force a failover for an Amazon RDS database cluster."""
 
 import asyncio
-from ...common.confirmation import readonly_check, require_confirmation
 from ...common.connection import RDSConnectionManager
-from ...common.exceptions import handle_exceptions
+from ...common.constants import (
+    SUCCESS_FAILED_OVER,
+)
+from ...common.decorators.handle_exceptions import handle_exceptions
+from ...common.decorators.readonly_check import readonly_check
+from ...common.decorators.require_confirmation import require_confirmation
 from ...common.server import mcp
 from ...common.utils import (
     format_rds_api_response,
-)
-from ...constants import (
-    SUCCESS_FAILED_OVER,
 )
 from loguru import logger
 from mcp.server.fastmcp import Context as FastMCPContext

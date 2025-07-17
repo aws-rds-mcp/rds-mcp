@@ -15,16 +15,16 @@
 """Tool to modify an existing Amazon RDS database cluster."""
 
 import asyncio
-from ...common.confirmation import readonly_check
 from ...common.connection import RDSConnectionManager
-from ...common.exceptions import handle_exceptions
+from ...common.constants import (
+    SUCCESS_MODIFIED,
+)
+from ...common.decorators.handle_exceptions import handle_exceptions
+from ...common.decorators.readonly_check import readonly_check
 from ...common.server import mcp
 from ...common.utils import (
     format_cluster_info,
     format_rds_api_response,
-)
-from ...constants import (
-    SUCCESS_MODIFIED,
 )
 from loguru import logger
 from mcp.server.fastmcp import Context as FastMCPContext

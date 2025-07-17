@@ -14,9 +14,9 @@
 
 """Performance report creation tool for RDS instances."""
 
-from ...common.confirmation import readonly_check
 from ...common.connection import PIConnectionManager
-from ...common.exceptions import handle_exceptions
+from ...common.decorators.handle_exceptions import handle_exceptions
+from ...common.decorators.readonly_check import readonly_check
 from ...common.server import mcp
 from datetime import datetime, timedelta
 from typing import Optional, Tuple
