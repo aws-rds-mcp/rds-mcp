@@ -53,7 +53,7 @@ These operations affect the availability of your database:
 
 
 @mcp.tool(
-    name='ManageDBInstanceStatus',
+    name='ChangeDBInstanceStatus',
     description=CHANGE_INSTANCE_STATUS_TOOL_DESCRIPTION,
 )
 @handle_exceptions
