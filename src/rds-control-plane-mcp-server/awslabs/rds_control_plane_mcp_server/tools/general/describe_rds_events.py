@@ -19,7 +19,6 @@ from ...common.context import RDSContext
 from ...common.decorators.handle_exceptions import handle_exceptions
 from ...common.server import mcp
 from datetime import datetime
-from mcp.types import ToolAnnotations
 from mypy_boto3_rds.type_defs import EventTypeDef
 from pydantic import BaseModel, Field
 from typing import List, Literal, Optional
@@ -116,10 +115,6 @@ This tool retrieves events for RDS resources such as DB instances, clusters, sec
 @mcp.tool(
     name='DescribeRDSEvents',
     description=DESCRIBE_EVENTS_TOOL_DESCRIPTION,
-    annotations=ToolAnnotations(
-        title='DescribeRDSEvents',
-        readOnlyHint=True,
-    ),
 )
 @handle_exceptions
 def describe_rds_events(
