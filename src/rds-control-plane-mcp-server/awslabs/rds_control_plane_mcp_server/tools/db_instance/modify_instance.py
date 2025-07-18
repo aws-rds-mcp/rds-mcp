@@ -15,16 +15,17 @@
 """Tool to modify an existing Amazon RDS database instance."""
 
 import asyncio
-from ...common.confirmation import readonly_check
 from ...common.connection import RDSConnectionManager
-from ...common.exceptions import handle_exceptions
+from ...common.constants import (
+    SUCCESS_MODIFIED,
+)
+from ...common.decorators.handle_exceptions import handle_exceptions
+from ...common.decorators.readonly_check import readonly_check
 from ...common.server import mcp
 from ...common.utils import (
     format_rds_api_response,
 )
-from ...constants import (
-    SUCCESS_MODIFIED,
-)
+from .utils import format_instance_info
 from loguru import logger
 from mcp.server.fastmcp import Context as FastMCPContext
 from pydantic import Field
@@ -197,4 +198,6 @@ async def modify_db_instance(
 
     result = format_rds_api_response(response)
     result['message'] = SUCCESS_MODIFIED.format(f'DB instance {db_instance_identifier}')
+    result['formatted_instance'] = format_instance_info(result.get('DBInstance', {}))
+
     return result

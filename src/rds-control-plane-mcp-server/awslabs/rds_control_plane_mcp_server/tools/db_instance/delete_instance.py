@@ -15,15 +15,16 @@
 """Tool to delete an Amazon RDS database instance."""
 
 import asyncio
-from ...common.confirmation import readonly_check, require_confirmation
 from ...common.connection import RDSConnectionManager
-from ...common.exceptions import handle_exceptions
+from ...common.constants import (
+    SUCCESS_DELETED,
+)
+from ...common.decorators.handle_exceptions import handle_exceptions
+from ...common.decorators.readonly_check import readonly_check
+from ...common.decorators.require_confirmation import require_confirmation
 from ...common.server import mcp
 from ...common.utils import (
     format_rds_api_response,
-)
-from ...constants import (
-    SUCCESS_DELETED,
 )
 from loguru import logger
 from mcp.server.fastmcp import Context as FastMCPContext
@@ -50,7 +51,7 @@ Without a final snapshot, all data will be permanently lost.
 )
 @handle_exceptions
 @readonly_check
-@require_confirmation('delete_db_instance')
+@require_confirmation('DeleteDBInstance')
 async def delete_db_instance(
     db_instance_identifier: Annotated[
         str, Field(description='The identifier for the DB instance')

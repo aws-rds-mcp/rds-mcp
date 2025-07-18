@@ -15,17 +15,18 @@
 """Tool to manage the status of an Amazon RDS database cluster."""
 
 import asyncio
-from ...common.confirmation import readonly_check, require_confirmation
 from ...common.connection import RDSConnectionManager
-from ...common.exceptions import handle_exceptions
-from ...common.server import mcp
-from ...common.utils import (
-    format_rds_api_response,
-)
-from ...constants import (
+from ...common.constants import (
     SUCCESS_REBOOTED,
     SUCCESS_STARTED,
     SUCCESS_STOPPED,
+)
+from ...common.decorators.handle_exceptions import handle_exceptions
+from ...common.decorators.readonly_check import readonly_check
+from ...common.decorators.require_confirmation import require_confirmation
+from ...common.server import mcp
+from ...common.utils import (
+    format_rds_api_response,
 )
 from loguru import logger
 from mcp.server.fastmcp import Context as FastMCPContext
@@ -50,7 +51,7 @@ These operations affect database availability and billing. Stopping makes the da
 )
 @handle_exceptions
 @readonly_check
-@require_confirmation('change_cluster_status')
+@require_confirmation('ChangeDBClusterStatus')
 async def change_cluster_status(
     db_cluster_identifier: Annotated[str, Field(description='The identifier for the DB cluster')],
     action: Annotated[str, Field(description='Action to perform: "start", "stop", or "reboot"')],

@@ -15,17 +15,18 @@
 """Tool to manage the status of an Amazon RDS database instance."""
 
 import asyncio
-from ...common.confirmation import readonly_check, require_confirmation
 from ...common.connection import RDSConnectionManager
-from ...common.exceptions import handle_exceptions
-from ...common.server import mcp
-from ...common.utils import (
-    format_rds_api_response,
-)
-from ...constants import (
+from ...common.constants import (
     SUCCESS_REBOOTED,
     SUCCESS_STARTED,
     SUCCESS_STOPPED,
+)
+from ...common.decorators.handle_exceptions import handle_exceptions
+from ...common.decorators.readonly_check import readonly_check
+from ...common.decorators.require_confirmation import require_confirmation
+from ...common.server import mcp
+from ...common.utils import (
+    format_rds_api_response,
 )
 from loguru import logger
 from mcp.server.fastmcp import Context as FastMCPContext
@@ -52,12 +53,12 @@ These operations affect the availability of your database:
 
 
 @mcp.tool(
-    name='ManageDBInstanceStatus',
+    name='ChangeDBInstanceStatus',
     description=CHANGE_INSTANCE_STATUS_TOOL_DESCRIPTION,
 )
 @handle_exceptions
 @readonly_check
-@require_confirmation('change_instance_status')
+@require_confirmation('ChangeDBInstanceStatus')
 async def change_instance_status(
     db_instance_identifier: Annotated[
         str, Field(description='The identifier for the DB instance')

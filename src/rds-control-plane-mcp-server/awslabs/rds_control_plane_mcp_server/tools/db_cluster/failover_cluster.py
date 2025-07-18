@@ -15,21 +15,22 @@
 """Tool to force a failover for an Amazon RDS database cluster."""
 
 import asyncio
-from ...common.confirmation import readonly_check, require_confirmation
 from ...common.connection import RDSConnectionManager
-from ...common.exceptions import handle_exceptions
+from ...common.decorators.handle_exceptions import handle_exceptions
+from ...common.decorators.readonly_check import readonly_check
+from ...common.decorators.require_confirmation import require_confirmation
 from ...common.server import mcp
 from ...common.utils import (
     format_rds_api_response,
-)
-from ...constants import (
-    SUCCESS_FAILED_OVER,
 )
 from loguru import logger
 from mcp.server.fastmcp import Context as FastMCPContext
 from pydantic import Field
 from typing import Any, Dict, Optional
 from typing_extensions import Annotated
+
+
+SUCCESS_FAILED_OVER = '{} has been failed over successfully.'
 
 
 FAILOVER_CLUSTER_TOOL_DESCRIPTION = """Force a failover for an RDS database cluster.
@@ -48,7 +49,7 @@ Failover causes a momentary interruption in database availability and any in-fli
 )
 @handle_exceptions
 @readonly_check
-@require_confirmation('failover_db_cluster')
+@require_confirmation('FailoverDBCluster')
 async def failover_db_cluster(
     db_cluster_identifier: Annotated[str, Field(description='The identifier for the DB cluster')],
     target_db_instance_identifier: Annotated[
