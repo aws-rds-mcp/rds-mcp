@@ -49,7 +49,7 @@ This is a destructive operation that permanently deletes data. A confirmation to
 )
 @handle_exceptions
 @readonly_check
-@require_confirmation('delete_db_cluster')
+@require_confirmation('DeleteDBCluster')
 async def delete_db_cluster(
     db_cluster_identifier: Annotated[str, Field(description='The identifier for the DB cluster')],
     skip_final_snapshot: Annotated[

@@ -49,7 +49,7 @@ Failover causes a momentary interruption in database availability and any in-fli
 )
 @handle_exceptions
 @readonly_check
-@require_confirmation('failover_db_cluster')
+@require_confirmation('FailoverDBCluster')
 async def failover_db_cluster(
     db_cluster_identifier: Annotated[str, Field(description='The identifier for the DB cluster')],
     target_db_instance_identifier: Annotated[

@@ -51,7 +51,7 @@ Without a final snapshot, all data will be permanently lost.
 )
 @handle_exceptions
 @readonly_check
-@require_confirmation('delete_db_instance')
+@require_confirmation('DeleteDBInstance')
 async def delete_db_instance(
     db_instance_identifier: Annotated[
         str, Field(description='The identifier for the DB instance')

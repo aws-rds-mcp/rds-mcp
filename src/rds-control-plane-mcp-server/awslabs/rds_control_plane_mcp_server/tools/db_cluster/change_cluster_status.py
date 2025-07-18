@@ -51,7 +51,7 @@ These operations affect database availability and billing. Stopping makes the da
 )
 @handle_exceptions
 @readonly_check
-@require_confirmation('change_cluster_status')
+@require_confirmation('ChangeDBClusterStatus')
 async def change_cluster_status(
     db_cluster_identifier: Annotated[str, Field(description='The identifier for the DB cluster')],
     action: Annotated[str, Field(description='Action to perform: "start", "stop", or "reboot"')],

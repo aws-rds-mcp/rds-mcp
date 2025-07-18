@@ -40,35 +40,35 @@ To confirm, please call this function again with the confirmation parameter.
 
 # Operation impacts - used to inform users about the potential impact of operations
 OPERATION_IMPACTS = {
-    'delete_db_cluster': {
+    'DeleteDBCluster': {
         'risk': 'critical',
         'downtime': 'Complete',
         'data_loss': 'Complete unless final snapshot is created',
         'reversible': 'No - unless restored from backup',
         'estimated_time': '5-10 minutes',
     },
-    'delete_db_instance': {
+    'DeleteDBInstance': {
         'risk': 'critical',
         'downtime': 'Complete',
         'data_loss': 'Complete unless final snapshot is created',
         'reversible': 'No - unless restored from backup',
         'estimated_time': '5-10 minutes',
     },
-    'change_cluster_status': {
+    'ChangeDBClusterStatus': {
         'risk': 'high',
         'downtime': 'Varies by action (complete for stop, brief for reboot)',
         'data_loss': 'None expected',
         'reversible': 'Yes - can change status again',
         'estimated_time': '2-8 minutes',
     },
-    'change_instance_status': {
+    'ChangeDBInstanceStatus': {
         'risk': 'high',
         'downtime': 'Varies by action (complete for stop, brief for reboot)',
         'data_loss': 'None expected',
         'reversible': 'Yes - can change status again',
         'estimated_time': '2-8 minutes',
     },
-    'failover_db_cluster': {
+    'FailoverDBCluster': {
         'risk': 'high',
         'downtime': 'Brief interruption',
         'data_loss': 'Uncommitted transactions may be lost',
@@ -164,7 +164,7 @@ def require_confirmation(operation_type: str) -> Callable:
     """Decorator to require confirmation for destructive operations.
 
     Args:
-        operation_type: The type of operation (e.g., 'delete_db_cluster')
+        operation_type: The type of operation (e.g., 'DeleteDBCluster')
 
     Returns:
         Decorator function

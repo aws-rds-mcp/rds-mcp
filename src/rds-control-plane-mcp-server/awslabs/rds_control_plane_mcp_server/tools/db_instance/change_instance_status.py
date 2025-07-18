@@ -58,7 +58,7 @@ These operations affect the availability of your database:
 )
 @handle_exceptions
 @readonly_check
-@require_confirmation('change_instance_status')
+@require_confirmation('ChangeDBInstanceStatus')
 async def change_instance_status(
     db_instance_identifier: Annotated[
         str, Field(description='The identifier for the DB instance')
