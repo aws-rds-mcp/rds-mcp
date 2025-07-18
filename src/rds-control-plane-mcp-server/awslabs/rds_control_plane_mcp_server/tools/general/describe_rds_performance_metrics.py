@@ -15,12 +15,11 @@
 """describe_rds_performance_metrics helpers, data models and tool implementation."""
 
 from ...common.connection import CloudwatchConnectionManager
-from ...common.exceptions import handle_exceptions
+from ...common.context import RDSContext
+from ...common.decorators.handle_exceptions import handle_exceptions
 from ...common.server import mcp
 from ...common.utils import handle_paginated_aws_api_call
-from ...context import RDSContext
 from datetime import datetime
-from mcp.types import ToolAnnotations
 from mypy_boto3_cloudwatch.literals import StatusCodeType
 from mypy_boto3_cloudwatch.type_defs import MetricDataResultTypeDef
 from pydantic import BaseModel, Field
@@ -64,8 +63,15 @@ METRICS = {
 }
 
 
+class DataPoint(BaseModel):
+    """Single metric data point with timestamp."""
+
+    timestamp: datetime = Field(..., description='Timestamp of the data point')
+    value: float = Field(..., description='Metric value at this timestamp')
+
+
 class MetricSummary(BaseModel):
-    """Summarized metric data optimized for LLM consumption."""
+    """Metric data with statistics and raw data points."""
 
     id: str = Field(..., description='The metric identifier')
     label: str = Field(..., description='The human-readable label')
@@ -77,20 +83,15 @@ class MetricSummary(BaseModel):
     min_value: float = Field(..., description='Minimum value in period')
     max_value: float = Field(..., description='Maximum value in period')
     avg_value: float = Field(..., description='Average value in period')
-    trend: str = Field(..., description='Trend: stable, increasing, decreasing')
-    change_percent: float = Field(..., description='Percentage change from start to end')
-    data_points_count: int = Field(..., description='Number of data points')
+    data_points_count: int = Field(..., description='Total number of data points available')
+    sample_data_points: List[DataPoint] = Field(
+        ...,
+        description='Representative data points with timestamps for analysis, including first and last points plus evenly distributed samples',
+    )
 
     @classmethod
     def from_metric_data(cls, metric_data: MetricDataResultTypeDef) -> 'MetricSummary':
-        """Create MetricSummary from CloudWatch metric data.
-
-        Args:
-            metric_data: CloudWatch metric data result containing Values, Timestamps, StatusCode and other fields
-
-        Returns:
-            MetricSummary: Object containing summarized metric data
-        """
+        """Create MetricSummary from CloudWatch metric data."""
         values = metric_data.get('Values', [])
         timestamps = metric_data.get('Timestamps', [])
         status = metric_data.get('StatusCode', 'Complete')
@@ -104,22 +105,44 @@ class MetricSummary(BaseModel):
                 min_value=0,
                 max_value=0,
                 avg_value=0,
-                trend='no_data',
-                change_percent=0,
                 data_points_count=0,
+                sample_data_points=[],
             )
 
         min_val, max_val, avg_val = min(values), max(values), mean(values)
         current_val = values[0] if timestamps and timestamps[0] > timestamps[-1] else values[-1]
-        start_val = values[-1] if timestamps and timestamps[0] > timestamps[-1] else values[0]
-        change_pct = ((current_val - start_val) / start_val * 100) if start_val != 0 else 0
 
-        if abs(change_pct) < 1:
-            trend = 'stable'
-        elif change_pct > 5:
-            trend = 'increasing'
+        data_with_timestamps = list(zip(timestamps, values))
+        data_with_timestamps.sort(key=lambda x: x[0])
+
+        max_data_points = RDSContext.max_items()
+        sample_data_points = []
+
+        if len(data_with_timestamps) <= max_data_points:
+            sample_data_points = [
+                DataPoint(timestamp=ts, value=round(val, 2)) for ts, val in data_with_timestamps
+            ]
         else:
-            trend = 'decreasing'
+            step = len(data_with_timestamps) // max_data_points
+            sample_data_points = [
+                DataPoint(
+                    timestamp=data_with_timestamps[i][0],
+                    value=round(data_with_timestamps[i][1], 2),
+                )
+                for i in range(0, len(data_with_timestamps), step)[:max_data_points]
+            ]
+
+            first_point = DataPoint(
+                timestamp=data_with_timestamps[0][0], value=round(data_with_timestamps[0][1], 2)
+            )
+            last_point = DataPoint(
+                timestamp=data_with_timestamps[-1][0], value=round(data_with_timestamps[-1][1], 2)
+            )
+
+            if sample_data_points and sample_data_points[0].timestamp != first_point.timestamp:
+                sample_data_points.insert(0, first_point)
+            if sample_data_points and sample_data_points[-1].timestamp != last_point.timestamp:
+                sample_data_points.append(last_point)
 
         return cls(
             id=metric_data.get('Id', ''),
@@ -129,14 +152,13 @@ class MetricSummary(BaseModel):
             min_value=round(min_val, 2),
             max_value=round(max_val, 2),
             avg_value=round(avg_val, 2),
-            trend=trend,
-            change_percent=round(change_pct, 2),
             data_points_count=len(values),
+            sample_data_points=sample_data_points,
         )
 
 
 class MetricSummaryList(BaseModel):
-    """Summarized metric data optimized for LLM analysis."""
+    """List of metric data with representative data points."""
 
     metrics: List[MetricSummary] = Field(..., description='List of summarized metrics')
     resource_identifier: str = Field(..., description='RDS resource identifier')
@@ -144,19 +166,12 @@ class MetricSummaryList(BaseModel):
     time_period: str = Field(..., description='Query time period')
 
 
-DESCRIBE_PERF_METRICS_TOOL_DESCRIPTION = """Retrieve performance metrics for RDS resources.
-
-This tool fetches detailed performance metrics for Amazon RDS resources including instances, clusters, and global clusters, allowing you to monitor performance, analyze trends, and troubleshoot issues with your database workloads.
-"""
+DESCRIBE_PERF_METRICS_TOOL_DESCRIPTION = """Retrieve performance metrics for RDS resources including instances, clusters, and global clusters providing statistical summaries and representative data points for analysis. The data points include the first and last points in the time range plus evenly distributed samples."""
 
 
 @mcp.tool(
     name='DescribeRDSPerformanceMetrics',
     description=DESCRIBE_PERF_METRICS_TOOL_DESCRIPTION,
-    annotations=ToolAnnotations(
-        title='DescribeRDSPerformanceMetrics',
-        readOnlyHint=True,
-    ),
 )
 @handle_exceptions
 def describe_rds_performance_metrics(
@@ -201,7 +216,7 @@ def describe_rds_performance_metrics(
         scan_by: The order to scan the results by timestamp (newest first or oldest first)
 
     Returns:
-        MetricSummaryList: Summarized performance metrics optimized for LLM analysis
+        MetricSummaryList: Performance metrics with statistical summaries and raw data points
     """
     start = (
         datetime.fromisoformat(start_date.replace('Z', '+00:00'))
