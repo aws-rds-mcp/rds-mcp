@@ -14,7 +14,6 @@
 
 """Custom exception handling for the RDS Control Plane MCP Server."""
 
-import json
 from botocore.exceptions import ClientError
 from functools import wraps
 from inspect import iscoroutinefunction
@@ -54,26 +53,20 @@ def handle_exceptions(func: Callable) -> Callable:
                 error_message = error.response['Error']['Message']
                 logger.error(f'Failed with client error {error_code}: {error_message}')
 
-                return json.dumps(
-                    {
-                        'error': ERROR_CLIENT.format(error_code),
-                        'error_code': error_code,
-                        'error_message': error_message,
-                        'operation': func.__name__,
-                    },
-                    indent=2,
-                )
+                return {
+                    'error': ERROR_CLIENT.format(error_code),
+                    'error_code': error_code,
+                    'error_message': error_message,
+                    'operation': func.__name__,
+                }
             else:
                 logger.exception(f'Failed with unexpected error: {str(error)}')
 
-                return json.dumps(
-                    {
-                        'error': ERROR_UNEXPECTED.format(str(error)),
-                        'error_type': type(error).__name__,
-                        'error_message': str(error),
-                        'operation': func.__name__,
-                    },
-                    indent=2,
-                )
+                return {
+                    'error': ERROR_UNEXPECTED.format(str(error)),
+                    'error_type': type(error).__name__,
+                    'error_message': str(error),
+                    'operation': func.__name__,
+                }
 
     return wrapper
