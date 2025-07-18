@@ -14,7 +14,6 @@
 
 """Read-only mode handling for the RDS Control Plane MCP Server."""
 
-import json
 from ..context import RDSContext
 from functools import wraps
 from inspect import iscoroutinefunction
@@ -53,14 +52,11 @@ def readonly_check(func: Callable) -> Callable:
             operation = func.__name__
             error_message = f"Operation '{operation}' requires write access. The server is currently in read-only mode."
             logger.warning(f'Operation blocked in readonly mode: {operation}')
-            return json.dumps(
-                {
-                    'error': ERROR_READONLY_MODE,
-                    'operation': operation,
-                    'message': error_message,
-                },
-                indent=2,
-            )
+            return {
+                'error': ERROR_READONLY_MODE,
+                'operation': operation,
+                'message': error_message,
+            }
 
         if iscoroutinefunction(func):
             return await func(*args, **kwargs)

@@ -14,21 +14,19 @@
 
 """Confirmation and permission management for the RDS Control Plane MCP Server."""
 
-import json
 import time
 import uuid
 from functools import wraps
 from inspect import iscoroutinefunction, signature
 from loguru import logger
-from typing import Any, Callable, Dict, Optional
+from typing import Any, Callable, Dict, Optional, Tuple
 
 
-# expiration time for pending operations (in seconds)
+# Expiration time for pending operations (in seconds)
 EXPIRATION_TIME = 300  # 5 minutes
 
-# Standard Confirmation Message
 STANDARD_CONFIRMATION_MESSAGE = """
-⚠️ WARNING: You are about to perform an operation that may have significant impact.
+WARNING: You are about to perform an operation that may have significant impact.
 
 Please review the details below carefully before proceeding:
 
@@ -42,68 +40,12 @@ To confirm, please call this function again with the confirmation parameter.
 
 # Operation impacts - used to inform users about the potential impact of operations
 OPERATION_IMPACTS = {
-    'create_db_cluster': {
-        'risk': 'low',
-        'downtime': 'None',
-        'data_loss': 'None',
-        'reversible': 'Yes - can be deleted',
-        'estimated_time': '5-10 minutes',
-    },
-    'modify_db_cluster': {
-        'risk': 'medium',
-        'downtime': 'Varies based on changes and apply_immediately setting',
-        'data_loss': 'None expected',
-        'reversible': 'Yes - can be modified again',
-        'estimated_time': '5-30 minutes',
-    },
     'delete_db_cluster': {
         'risk': 'critical',
         'downtime': 'Complete',
         'data_loss': 'Complete unless final snapshot is created',
         'reversible': 'No - unless restored from backup',
         'estimated_time': '5-10 minutes',
-    },
-    'start_db_cluster': {
-        'risk': 'low',
-        'downtime': 'None',
-        'data_loss': 'None',
-        'reversible': 'Yes - can be stopped again',
-        'estimated_time': '3-8 minutes',
-    },
-    'stop_db_cluster': {
-        'risk': 'high',
-        'downtime': 'Complete until started again',
-        'data_loss': 'None',
-        'reversible': 'Yes - can be started again',
-        'estimated_time': '3-8 minutes',
-    },
-    'reboot_db_cluster': {
-        'risk': 'high',
-        'downtime': 'Brief interruption',
-        'data_loss': 'None expected',
-        'reversible': 'Not applicable',
-        'estimated_time': '2-5 minutes',
-    },
-    'failover_db_cluster': {
-        'risk': 'high',
-        'downtime': 'Brief interruption',
-        'data_loss': 'Uncommitted transactions may be lost',
-        'reversible': 'Yes - can failover again',
-        'estimated_time': '1-3 minutes',
-    },
-    'create_db_instance': {
-        'risk': 'low',
-        'downtime': 'None',
-        'data_loss': 'None',
-        'reversible': 'Yes - can be deleted',
-        'estimated_time': '5-10 minutes',
-    },
-    'modify_db_instance': {
-        'risk': 'medium',
-        'downtime': 'Varies based on changes and apply_immediately setting',
-        'data_loss': 'None expected',
-        'reversible': 'Yes - can be modified again',
-        'estimated_time': '5-30 minutes',
     },
     'delete_db_instance': {
         'risk': 'critical',
@@ -112,97 +54,33 @@ OPERATION_IMPACTS = {
         'reversible': 'No - unless restored from backup',
         'estimated_time': '5-10 minutes',
     },
-    'start_db_instance': {
-        'risk': 'low',
-        'downtime': 'None',
-        'data_loss': 'None',
-        'reversible': 'Yes - can be stopped again',
-        'estimated_time': '3-8 minutes',
-    },
-    'stop_db_instance': {
+    'change_cluster_status': {
         'risk': 'high',
-        'downtime': 'Complete until started again',
-        'data_loss': 'None',
-        'reversible': 'Yes - can be started again',
-        'estimated_time': '3-8 minutes',
+        'downtime': 'Varies by action (complete for stop, brief for reboot)',
+        'data_loss': 'None expected',
+        'reversible': 'Yes - can change status again',
+        'estimated_time': '2-8 minutes',
     },
-    'reboot_db_instance': {
+    'change_instance_status': {
+        'risk': 'high',
+        'downtime': 'Varies by action (complete for stop, brief for reboot)',
+        'data_loss': 'None expected',
+        'reversible': 'Yes - can change status again',
+        'estimated_time': '2-8 minutes',
+    },
+    'failover_db_cluster': {
         'risk': 'high',
         'downtime': 'Brief interruption',
-        'data_loss': 'None expected',
-        'reversible': 'Not applicable',
+        'data_loss': 'Uncommitted transactions may be lost',
+        'reversible': 'Yes - can failover again',
         'estimated_time': '1-3 minutes',
     },
-    'create_db_snapshot': {
-        'risk': 'low',
-        'downtime': 'None',
-        'data_loss': 'None',
-        'reversible': 'Yes - can be deleted',
-        'estimated_time': 'Varies with database size',
-    },
-    'delete_db_snapshot': {
-        'risk': 'high',
-        'downtime': 'None',
-        'data_loss': 'Snapshot will be permanently deleted',
-        'reversible': 'No',
-        'estimated_time': '1-5 minutes',
-    },
-    'restore_db_cluster_from_snapshot': {
-        'risk': 'medium',
-        'downtime': 'None (new cluster)',
-        'data_loss': 'None',
-        'reversible': 'Yes - can be deleted',
-        'estimated_time': '10-30 minutes',
-    },
-    'restore_db_instance_from_snapshot': {
-        'risk': 'medium',
-        'downtime': 'None (new instance)',
-        'data_loss': 'None',
-        'reversible': 'Yes - can be deleted',
-        'estimated_time': '10-30 minutes',
-    },
-    'restore_db_cluster_to_point_in_time': {
-        'risk': 'medium',
-        'downtime': 'None (new cluster)',
-        'data_loss': 'None',
-        'reversible': 'Yes - can be deleted',
-        'estimated_time': '10-30 minutes',
-    },
-    'restore_db_instance_to_point_in_time': {
-        'risk': 'medium',
-        'downtime': 'None (new instance)',
-        'data_loss': 'None',
-        'reversible': 'Yes - can be deleted',
-        'estimated_time': '10-30 minutes',
-    },
-    'modify_db_cluster_parameter_group': {
-        'risk': 'medium',
-        'downtime': 'Depends on parameters (may require reboot)',
-        'data_loss': 'None expected',
-        'reversible': 'Yes - can be modified again',
-        'estimated_time': '1-5 minutes',
-    },
-    'modify_db_parameter_group': {
-        'risk': 'medium',
-        'downtime': 'Depends on parameters (may require reboot)',
-        'data_loss': 'None expected',
-        'reversible': 'Yes - can be modified again',
-        'estimated_time': '1-5 minutes',
-    },
-    'reset_db_cluster_parameter_group': {
-        'risk': 'high',
-        'downtime': 'Depends on parameters (may require reboot)',
-        'data_loss': 'None expected',
-        'reversible': 'Yes - can be modified again',
-        'estimated_time': '1-5 minutes',
-    },
-    'reset_db_parameter_group': {
-        'risk': 'high',
-        'downtime': 'Depends on parameters (may require reboot)',
-        'data_loss': 'None expected',
-        'reversible': 'Yes - can be modified again',
-        'estimated_time': '1-5 minutes',
-    },
+}
+
+RESOURCE_MAPPINGS = {
+    'db_cluster_identifier': 'DB cluster',
+    'db_instance_identifier': 'DB instance',
+    'db_snapshot_identifier': 'DB snapshot',
 }
 
 # dictionary to store pending operations
@@ -210,64 +88,32 @@ OPERATION_IMPACTS = {
 _pending_operations = {}
 
 
-def generate_confirmation_token() -> str:
-    """Generate a unique confirmation token.
-
-    Returns:
-        str: A unique confirmation token
-    """
-    return str(uuid.uuid4())
-
-
-def add_pending_operation(operation_type: str, params: Dict[str, Any]) -> str:
-    """Add a pending operation.
+def _get_operation_impact(operation: str) -> Dict[str, Any]:
+    """Get detailed impact information for an operation.
 
     Args:
-        operation_type: The type of operation (e.g., 'delete_db_cluster')
-        params: The parameters for the operation
-
+        operation: The operation name
     Returns:
-        str: The confirmation token for the operation
+        Dictionary with impact details
+    Raises:
+        ValueError: If operation is not defined in OPERATION_IMPACTS
     """
-    token = generate_confirmation_token()
-    expiration_time = time.time() + EXPIRATION_TIME
-    _pending_operations[token] = (operation_type, params, expiration_time)
-    return token
+    if operation not in OPERATION_IMPACTS:
+        raise ValueError(f"Operation '{operation}' is not defined in OPERATION_IMPACTS")
+
+    return OPERATION_IMPACTS[operation]
 
 
-def get_pending_operation(token: str) -> Optional[tuple]:
-    """Get a pending operation by its confirmation token.
-
-    Args:
-        token: The confirmation token
-
-    Returns:
-        Optional[tuple]: The operation type, parameters, and expiration time, or None if not found
-    """
-    # clean up expired operations
-    cleanup_expired_operations()
-
-    # return the operation if it exists
-    return _pending_operations.get(token)
+def _get_resource_info(params: Dict[str, Any]) -> Tuple[str, str]:
+    """Extract resource type and identifier from parameters."""
+    for param_name, resource_type in RESOURCE_MAPPINGS.items():
+        if param_name in params and params[param_name]:
+            return resource_type, params[param_name]
+    return 'resource', 'unknown'
 
 
-def remove_pending_operation(token: str) -> bool:
-    """Remove a pending operation.
-
-    Args:
-        token: The confirmation token
-
-    Returns:
-        bool: True if the operation was removed, False otherwise
-    """
-    if token in _pending_operations:
-        del _pending_operations[token]
-        return True
-    return False
-
-
-def cleanup_expired_operations() -> None:
-    """Clean up expired operations."""
+def _cleanup_expired_operations() -> None:
+    """Remove expired operations from the pending operations dictionary."""
     current_time = time.time()
     expired_tokens = [
         token
@@ -278,30 +124,44 @@ def cleanup_expired_operations() -> None:
         del _pending_operations[token]
 
 
-def get_operation_impact(operation: str) -> Dict[str, Any]:
-    """Get detailed impact information for an operation.
+def _validate_confirmation_token(
+    token: str, operation_type: str, params: Dict[str, Any]
+) -> Optional[Dict[str, str]]:
+    """Validate a confirmation token.
 
     Args:
-        operation: The operation name
+        token: The confirmation token to validate
+        operation_type: The expected operation type
+        params: The current operation parameters
 
     Returns:
-        Dictionary with impact details
-
-    Raises:
-        ValueError: If operation is not defined in OPERATION_IMPACTS
+        Error dict if validation fails, None if validation succeeds
     """
-    if operation not in OPERATION_IMPACTS:
-        raise ValueError(f"Operation '{operation}' is not defined in OPERATION_IMPACTS")
+    # Validate token
+    pending_op = _pending_operations.get(token)
+    if not pending_op:
+        return {
+            'error': 'Invalid or expired confirmation token. Please request a new token by calling this tool without the confirmation token set.'
+        }
 
-    return OPERATION_IMPACTS[operation]
+    op_type, stored_params, _ = pending_op
+
+    # Validate operation type
+    if op_type != operation_type:
+        return {'error': f'Invalid operation type. Expected "{operation_type}", got "{op_type}".'}
+
+    # Validate resource identifiers
+    for key in ['db_cluster_identifier', 'db_instance_identifier', 'db_snapshot_identifier']:
+        if key in stored_params and key in params and stored_params[key] != params[key]:
+            return {
+                'error': f'Parameter mismatch. The confirmation token is for a different {key}.'
+            }
+
+    return None
 
 
 def require_confirmation(operation_type: str) -> Callable:
     """Decorator to require confirmation for destructive operations.
-
-    This decorator handles the confirmation flow for operations that
-    require explicit user confirmation before proceeding. It uses a
-    standardized confirmation message from constants.py.
 
     Args:
         operation_type: The type of operation (e.g., 'delete_db_cluster')
@@ -315,32 +175,28 @@ def require_confirmation(operation_type: str) -> Callable:
         async def wrapper(*args: Any, **kwargs: Any):
             confirmation_token = kwargs.get('confirmation_token')
 
+            _cleanup_expired_operations()
+
+            sig = signature(func)
+            bound_args = sig.bind(*args, **kwargs)
+            bound_args.apply_defaults()
+
+            params = {}
+            for param_name, param_value in bound_args.arguments.items():
+                if param_name not in ['ctx', 'confirmation_token']:
+                    params[param_name] = param_value
+
             if not confirmation_token:
-                sig = signature(func)
-                params = {}
-                bound_args = sig.bind(*args, **kwargs)
-                bound_args.apply_defaults()
-
-                for param_name, param_value in bound_args.arguments.items():
-                    if param_name not in ['ctx', 'confirmation_token']:
-                        params[param_name] = param_value
-
-                impact = get_operation_impact(operation_type)
-
-                resource_type = 'resource'
-                identifier = 'unknown'
-
-                if 'db_cluster_identifier' in params:
-                    resource_type = 'DB cluster'
-                    identifier = params['db_cluster_identifier']
-                elif 'db_instance_identifier' in params:
-                    resource_type = 'DB instance'
-                    identifier = params['db_instance_identifier']
-                elif 'db_snapshot_identifier' in params:
-                    resource_type = 'DB snapshot'
-                    identifier = params['db_snapshot_identifier']
-
+                impact = _get_operation_impact(operation_type)
+                resource_type, identifier = _get_resource_info(params)
                 operation_name = operation_type.replace('_', ' ').title()
+
+                token = str(uuid.uuid4())
+                _pending_operations[token] = (
+                    operation_type,
+                    params,
+                    time.time() + EXPIRATION_TIME,
+                )
 
                 warning_message = STANDARD_CONFIRMATION_MESSAGE.format(
                     operation=operation_name,
@@ -349,44 +205,23 @@ def require_confirmation(operation_type: str) -> Callable:
                     risk_level=impact.get('risk', 'Unknown'),
                 )
 
-                token = add_pending_operation(operation_type, params)
-
                 logger.info(f'Confirmation required for operation: {operation_type}')
-                return json.dumps(
-                    {
-                        'requires_confirmation': True,
-                        'warning': warning_message,
-                        'impact': impact,
-                        'confirmation_token': token,
-                        'message': f'{warning_message}\n\nTo confirm, please call this function again with the confirmation_token parameter set to this token.',
-                    },
-                    indent=2,
-                )
-            pending_op = get_pending_operation(confirmation_token)
-            if not pending_op:
                 return {
-                    'error': 'Invalid or expired confirmation token. Please request a new token by calling this function without a confirmation_token parameter.'
-                }
-            op_type, stored_params, _ = pending_op
-
-            if op_type != operation_type:
-                return {
-                    'error': f'Invalid operation type. Expected "{operation_type}", got "{op_type}".'
+                    'requires_confirmation': True,
+                    'warning': warning_message,
+                    'impact': impact,
+                    'confirmation_token': token,
+                    'message': 'To confirm, please call this function again with the confirmation_token parameter set to this token.',
                 }
 
-            sig = signature(func)
-            bound_args = sig.bind(*args, **kwargs)
-            bound_args.apply_defaults()
+            error = _validate_confirmation_token(confirmation_token, operation_type, params)
+            if error:
+                return error
 
-            for key in ['db_cluster_identifier', 'db_instance_identifier']:
-                if key in stored_params and key in bound_args.arguments:
-                    if stored_params[key] != bound_args.arguments[key]:
-                        return {
-                            'error': f'Parameter mismatch. The confirmation token is for a different {key}.'
-                        }
+            # Remove the pending operation
+            del _pending_operations[confirmation_token]
 
-            remove_pending_operation(confirmation_token)
-
+            # Execute the function
             if iscoroutinefunction(func):
                 return await func(*args, **kwargs)
             return func(*args, **kwargs)
