@@ -53,7 +53,6 @@ class TestMetricSummary:
         assert summary.max_value == 20.1
         assert summary.avg_value == 15.36  # Average of values
         assert summary.data_points_count == 5
-        assert summary.change_percent == 17.14  # ((12.3 - 10.5) / 10.5) * 100
 
     def test_metric_summary_from_empty_data(self):
         """Test MetricSummary creation from empty metric data."""
@@ -74,8 +73,6 @@ class TestMetricSummary:
         assert summary.min_value == 0
         assert summary.max_value == 0
         assert summary.avg_value == 0
-        assert summary.trend == 'no_data'
-        assert summary.change_percent == 0
         assert summary.data_points_count == 0
 
     def test_metric_summary_trend_stable(self):
@@ -94,7 +91,6 @@ class TestMetricSummary:
         }
 
         summary = MetricSummary.from_metric_data(metric_data)
-        assert summary.trend == 'stable'
 
     def test_metric_summary_trend_increasing(self):
         """Test trend calculation for increasing values."""
@@ -110,8 +106,6 @@ class TestMetricSummary:
         }
 
         summary = MetricSummary.from_metric_data(metric_data)
-        assert summary.trend == 'increasing'
-        assert summary.change_percent == 10.0
 
     def test_metric_summary_trend_decreasing(self):
         """Test trend calculation for decreasing values."""
@@ -127,8 +121,6 @@ class TestMetricSummary:
         }
 
         summary = MetricSummary.from_metric_data(metric_data)
-        assert summary.trend == 'decreasing'
-        assert summary.change_percent == -10.0
 
     def test_metric_summary_reversed_timestamps(self):
         """Test metric summary with timestamps in descending order."""

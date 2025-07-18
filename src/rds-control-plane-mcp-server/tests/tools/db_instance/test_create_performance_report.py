@@ -33,12 +33,8 @@ class TestCreatePerformanceReport:
         """Test performance report creation in readonly mode."""
         result = await create_performance_report(dbi_resource_identifier='db-instance-1')
 
-        # The decorator returns JSON error response instead of raising
-        import json
-
-        result_dict = json.loads(result)
-        assert 'error' in result_dict
-        assert 'read-only mode' in result_dict['error']
+        assert 'error' in result
+        assert 'read-only mode' in result['error']
 
     @pytest.mark.asyncio
     async def test_create_report_success(self, mock_pi_client, mock_rds_context_allowed):
@@ -78,12 +74,8 @@ class TestCreatePerformanceReport:
 
         result = await create_performance_report(dbi_resource_identifier='db-instance-1')
 
-        # The decorator returns JSON error response instead of raising
-        import json
-
-        result_dict = json.loads(result)
-        assert 'error' in result_dict
-        assert 'Failed to create performance report' in result_dict['error_message']
+        assert 'error' in result
+        assert 'Failed to create performance report' in result['error_message']
 
 
 class TestTimeUtilities:

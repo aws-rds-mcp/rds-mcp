@@ -158,8 +158,7 @@ class TestInstance:
 
         assert instance.instance_id == 'test-instance'
         assert instance.engine_version == ''
-        assert instance.endpoint is not None
-        assert instance.endpoint.address is None
+        assert instance.endpoint is None
         assert instance.availability_zone is None
         assert instance.multi_az is False
         assert instance.storage is not None
