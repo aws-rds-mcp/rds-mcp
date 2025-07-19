@@ -18,7 +18,6 @@ from ..context import RDSContext
 from functools import wraps
 from inspect import iscoroutinefunction
 from loguru import logger
-from mcp.server.fastmcp import Context as FastMCPContext
 from typing import Any, Callable
 
 
@@ -41,13 +40,6 @@ def readonly_check(func: Callable) -> Callable:
 
     @wraps(func)
     async def wrapper(*args: Any, **kwargs: Any):
-        ctx = kwargs.get('ctx')
-        if not ctx:
-            for arg in args:
-                if isinstance(arg, FastMCPContext):
-                    ctx = arg
-                    break
-
         if RDSContext.readonly_mode():
             operation = func.__name__
             error_message = f"Operation '{operation}' requires write access. The server is currently in read-only mode."
