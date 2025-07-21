@@ -145,7 +145,7 @@ class Instance(BaseModel):
 
 @mcp.resource(
     uri='aws-rds://db-instance/{instance_id}',
-    name='GetDBInstanceDetails',
+    name='DescribeDBInstanceDetails',
     mime_type='application/json',
     description=DESCRIBE_INSTANCE_DETAIL_DOCSTRING,
 )

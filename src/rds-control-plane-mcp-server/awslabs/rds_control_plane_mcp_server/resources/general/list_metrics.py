@@ -22,28 +22,10 @@ from pydantic import BaseModel, Field
 from typing import List, Literal, Optional
 
 
-class Metric(BaseModel):
-    """A model for a metric included in the response of the available metrics resources."""
-
-    metric_name: str = Field(..., description='Name of the metric')
-
-    @classmethod
-    def format_metric(cls, metric_dict):
-        """Format a CloudWatch metric dictionary into a Metric.
-
-        Args:
-            metric_dict: The metric dictionary from CloudWatch API
-
-        Returns:
-            Metric: A formatted metric item
-        """
-        return cls(metric_name=metric_dict['MetricName'])
-
-
 class MetricList(BaseModel):
     """A model for a list of metrics included in the response of the available metrics resources."""
 
-    metrics: List[Metric] = Field(..., description='List of metrics')
+    metrics: List[str] = Field(..., description='List of metrics')
     count: int = Field(..., description='Number of metrics in the list')
     namespace: str = 'AWS/RDS'
     resource_uri: Optional[str] = Field(
@@ -75,7 +57,7 @@ def list_metrics(dimension_name: str, dimension_value: str) -> MetricList:
         client=cloudwatch_client,
         paginator_name='list_metrics',
         operation_parameters=operation_parameters,
-        format_function=Metric.format_metric,
+        format_function=lambda metric_dict: metric_dict['MetricName'],
         result_key='Metrics',
     )
 
@@ -88,7 +70,7 @@ def list_metrics(dimension_name: str, dimension_value: str) -> MetricList:
 
 
 @mcp.resource(
-    uri='aws-rds://{resource_type}/{resource_identifier}/available_metrics',
+    uri='aws-rds://{resource_type}/{resource_identifier}/cloudwatch_metrics',
     name='ListRDSMetrics',
     description='List available metrics for a RDS resource (db-instance or db-cluster).',
     mime_type='text/plain',

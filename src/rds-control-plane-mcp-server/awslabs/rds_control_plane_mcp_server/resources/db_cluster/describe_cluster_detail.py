@@ -133,7 +133,7 @@ class Cluster(BaseModel):
 
 @mcp.resource(
     uri='aws-rds://db-cluster/{cluster_id}',
-    name='GetDBClusterDetail',
+    name='DescribeDBClusterDetail',
     description=DESCRIBE_CLUSTER_DETAIL_RESOURCE_DESCRIPTION,
     mime_type='application/json',
 )

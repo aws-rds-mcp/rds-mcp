@@ -16,23 +16,10 @@
 
 import asyncio
 from awslabs.rds_control_plane_mcp_server.resources.general.list_metrics import (
-    Metric,
     MetricList,
     list_metrics,
     list_rds_metrics,
 )
-
-
-class TestMetric:
-    """Tests for the Metric model."""
-
-    def test_format_metric(self):
-        """Test the format_metric classmethod correctly creates a Metric."""
-        metric_dict = {'MetricName': 'CPUUtilization'}
-        result = Metric.format_metric(metric_dict)
-
-        assert isinstance(result, Metric)
-        assert result.metric_name == 'CPUUtilization'
 
 
 class TestListMetricsFunction:
@@ -55,8 +42,8 @@ class TestListMetricsFunction:
         assert result.count == 2
         assert result.namespace == 'AWS/RDS'
         assert len(result.metrics) == 2
-        assert result.metrics[0].metric_name == 'CPUUtilization'
-        assert result.metrics[1].metric_name == 'DatabaseConnections'
+        assert result.metrics[0] == 'CPUUtilization'
+        assert result.metrics[1] == 'DatabaseConnections'
         assert result.resource_uri is None
 
         mock_cloudwatch_client.get_paginator.assert_called_once_with('list_metrics')
@@ -87,7 +74,7 @@ class TestListRDSMetrics:
         assert result.count == 1
         assert result.namespace == 'AWS/RDS'
         assert len(result.metrics) == 1
-        assert result.metrics[0].metric_name == 'CPUUtilization'
+        assert result.metrics[0] == 'CPUUtilization'
 
         call_args = mock_cloudwatch_client.get_paginator.return_value.paginate.call_args[1]
         assert call_args['Dimensions'] == [
@@ -110,7 +97,7 @@ class TestListRDSMetrics:
         assert result.count == 1
         assert result.namespace == 'AWS/RDS'
         assert len(result.metrics) == 1
-        assert result.metrics[0].metric_name == 'CPUUtilization'
+        assert result.metrics[0] == 'CPUUtilization'
 
         call_args = mock_cloudwatch_client.get_paginator.return_value.paginate.call_args[1]
         assert call_args['Dimensions'] == [
