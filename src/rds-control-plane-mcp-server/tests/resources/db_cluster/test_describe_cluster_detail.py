@@ -15,7 +15,7 @@
 """Tests for get_cluster_detail resource."""
 
 import pytest
-from awslabs.rds_control_plane_mcp_server.resources.db_cluster.get_cluster_detail import (
+from awslabs.rds_control_plane_mcp_server.resources.db_cluster.describe_cluster_detail import (
     Cluster,
     ClusterMember,
     get_cluster_detail,

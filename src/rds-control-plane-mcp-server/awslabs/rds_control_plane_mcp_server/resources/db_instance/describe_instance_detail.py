@@ -22,7 +22,7 @@ from ...tools.db_instance.utils import format_instance_info
 from loguru import logger
 from mypy_boto3_rds.type_defs import DBInstanceTypeDef
 from pydantic import BaseModel, Field
-from typing import Any, Dict, List, Optional
+from typing import Dict, List, Optional
 
 
 GET_INSTANCE_DETAIL_DOCSTRING = """Get detailed information about a specific Amazon RDS instance.
@@ -102,7 +102,7 @@ class Instance(BaseModel):
         """
         # Use the shared utility function to format the instance data
         formatted_data = format_instance_info(instance)
-        
+
         # Convert the formatted data to the pydantic models
         endpoint = None
         if formatted_data.get('endpoint'):

@@ -15,7 +15,7 @@
 """Tests for get_instance_detail resource."""
 
 import pytest
-from awslabs.rds_control_plane_mcp_server.resources.db_instance.get_instance_detail import (
+from awslabs.rds_control_plane_mcp_server.resources.db_instance.describe_instance_detail import (
     Instance,
     InstanceEndpoint,
     InstanceStorage,
