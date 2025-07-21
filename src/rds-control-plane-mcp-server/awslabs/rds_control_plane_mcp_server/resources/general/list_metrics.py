@@ -19,29 +19,39 @@ from ...common.decorators.handle_exceptions import handle_exceptions
 from ...common.server import mcp
 from ...common.utils import handle_paginated_aws_api_call
 from pydantic import BaseModel, Field
-from typing import List, Literal
+from typing import List, Literal, Optional
 
 
-class ListMetricItem(BaseModel):
-    """A model for a metric included in the response of the availble metrics resources."""
+class Metric(BaseModel):
+    """A model for a metric included in the response of the available metrics resources."""
 
-    namespace: str = 'AWS/RDS'
     metric_name: str = Field(..., description='Name of the metric')
 
     @classmethod
     def format_metric(cls, metric_dict):
-        """Format a CloudWatch metric dictionary into a ListMetricItem.
+        """Format a CloudWatch metric dictionary into a Metric.
 
         Args:
             metric_dict: The metric dictionary from CloudWatch API
 
         Returns:
-            ListMetricItem: A formatted metric item
+            Metric: A formatted metric item
         """
         return cls(metric_name=metric_dict['MetricName'])
 
 
-async def list_metrics(dimension_name: str, dimension_value: str) -> List[ListMetricItem]:
+class MetricList(BaseModel):
+    """A model for a list of metrics included in the response of the available metrics resources."""
+
+    metrics: List[Metric] = Field(..., description='List of metrics')
+    count: int = Field(..., description='Number of metrics in the list')
+    namespace: str = 'AWS/RDS'
+    resource_uri: Optional[str] = Field(
+        None, description='URI of the resource for which metrics are listed'
+    )
+
+
+def list_metrics(dimension_name: str, dimension_value: str) -> MetricList:
     """List available CloudWatch metrics for a given RDS resource.
 
     Args:
@@ -49,7 +59,7 @@ async def list_metrics(dimension_name: str, dimension_value: str) -> List[ListMe
         dimension_value: The value of the dimension to filter metrics by (e.g., instance ID)
 
     Returns:
-        List of metrics as ListMetricItem objects with information about availability
+        MetricList: List of metrics with information about availability
         and recent activity
     """
     cloudwatch_client = CloudwatchConnectionManager.get_connection()
@@ -65,11 +75,16 @@ async def list_metrics(dimension_name: str, dimension_value: str) -> List[ListMe
         client=cloudwatch_client,
         paginator_name='list_metrics',
         operation_parameters=operation_parameters,
-        format_function=ListMetricItem.format_metric,
+        format_function=Metric.format_metric,
         result_key='Metrics',
     )
 
-    return metrics
+    return MetricList(
+        metrics=metrics,
+        count=len(metrics),
+        namespace='AWS/RDS',
+        resource_uri=None,
+    )
 
 
 @mcp.resource(
@@ -79,9 +94,9 @@ async def list_metrics(dimension_name: str, dimension_value: str) -> List[ListMe
     mime_type='text/plain',
 )
 @handle_exceptions
-async def list_rds_metrics(
+def list_rds_metrics(
     resource_type: Literal['db-instance', 'db-cluster'], resource_identifier: str
-) -> List[ListMetricItem]:
+) -> MetricList:
     """List available metrics for an Amazon RDS resource.
 
     This function retrieves a list of all available CloudWatch metrics for a specified
@@ -93,7 +108,7 @@ async def list_rds_metrics(
         resource_identifier (str): The identifier of the RDS resource to retrieve metrics for.
 
     Returns:
-        List[ListMetricItem]: A list of available metrics for the specified RDS resource.
+        MetricList: A list of available metrics for the specified RDS resource.
     """
     dimension_mapping = {
         'db-instance': 'DBInstanceIdentifier',
@@ -106,7 +121,9 @@ async def list_rds_metrics(
             f"Unsupported resource type: {resource_type}. Must be 'db-instance' or 'db-cluster'."
         )
 
-    return await list_metrics(
+    result = list_metrics(
         dimension_name=dimension_name,
         dimension_value=resource_identifier,
     )
+    result.resource_uri = f'aws-rds://{resource_type}/{resource_identifier}/available_metrics'
+    return result
