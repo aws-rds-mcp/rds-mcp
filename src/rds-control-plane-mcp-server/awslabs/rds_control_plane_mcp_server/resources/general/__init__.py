@@ -12,6 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""RDS Control Plane MCP Server resources."""
+# This file is part of the awslabs namespace.
+# It is intentionally minimal to support PEP 420 namespace packages.
 
-from . import db_cluster, db_instance, general
+from .list_metrics import list_metrics
+
+__all__ = [
+    'list_metrics',
+]
