@@ -25,7 +25,7 @@ from pydantic import BaseModel, Field
 from typing import Dict, List, Optional
 
 
-GET_INSTANCE_DETAIL_DOCSTRING = """Get detailed information about a specific Amazon RDS instance.
+DESCRIBE_INSTANCE_DETAIL_DOCSTRING = """Get detailed information about a specific Amazon RDS instance.
 
 This resource retrieves comprehensive details about a specific RDS database instance identified by its instance ID, including configuration, status, endpoints, storage details, and security settings.
 """
@@ -147,10 +147,10 @@ class Instance(BaseModel):
     uri='aws-rds://db-instance/{instance_id}',
     name='GetDBInstanceDetails',
     mime_type='application/json',
-    description=GET_INSTANCE_DETAIL_DOCSTRING,
+    description=DESCRIBE_INSTANCE_DETAIL_DOCSTRING,
 )
 @handle_exceptions
-async def get_instance_detail(
+async def describe_instance_detail(
     instance_id: str = Field(..., description='The instance identifier'),
 ) -> Instance:
     """Get detailed information about a specific instance as a resource.

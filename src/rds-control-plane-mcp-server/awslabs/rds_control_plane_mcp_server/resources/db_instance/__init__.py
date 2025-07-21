@@ -15,7 +15,7 @@
 # This file is part of the awslabs namespace.
 # It is intentionally minimal to support PEP 420 namespace packages.
 
-from .describe_instance_detail import get_instance_detail
+from .describe_instance_detail import describe_instance_detail
 from .list_instances import list_instances
 from .list_performance_reports import list_performance_reports
 from .read_performance_report import read_performance_report
