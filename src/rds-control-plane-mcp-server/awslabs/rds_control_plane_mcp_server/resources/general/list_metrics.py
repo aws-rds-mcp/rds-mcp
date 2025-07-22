@@ -107,5 +107,5 @@ def list_rds_metrics(
         dimension_name=dimension_name,
         dimension_value=resource_identifier,
     )
-    result.resource_uri = f'aws-rds://{resource_type}/{resource_identifier}/available_metrics'
+    result.resource_uri = f'aws-rds://{resource_type}/{resource_identifier}/cloudwatch_metrics'
     return result
