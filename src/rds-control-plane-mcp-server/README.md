@@ -16,7 +16,7 @@ The official MCP Server for interacting with AWS RDS control plane. This server 
 - `aws-rds://db-instance/{dbi_resource_identifier}/performance_report/{report_id}` - Read a specific performance report
 
 ### General Resources
-- `aws-rds://{resource_type}/{resource_identifier}/available_metrics` - List available metrics for a RDS resource (db-instance or db-cluster).
+- `aws-rds://{resource_type}/{resource_identifier}/cloudwatch_metrics` - List available metrics for a RDS resource (db-instance or db-cluster).
 
 ## Available Tools
 
