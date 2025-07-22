@@ -29,7 +29,6 @@ from ...common.utils import (
     format_rds_api_response,
 )
 from loguru import logger
-from mcp.server.fastmcp import Context as FastMCPContext
 from pydantic import Field
 from typing import Any, Dict, Optional
 from typing_extensions import Annotated
@@ -58,7 +57,6 @@ async def change_cluster_status(
     confirmation_token: Annotated[
         Optional[str], Field(description='Confirmation token for destructive operations')
     ] = None,
-    ctx: Optional[FastMCPContext] = None,
 ) -> Dict[str, Any]:
     """Change the status of an RDS database cluster.
 
@@ -66,7 +64,6 @@ async def change_cluster_status(
         db_cluster_identifier: The identifier for the DB cluster
         action: Action to perform: "start", "stop", or "reboot"
         confirmation_token: Confirmation token for destructive operations
-        ctx: MCP context for logging and state management
 
     Returns:
         Dict[str, Any]: The response from the AWS API

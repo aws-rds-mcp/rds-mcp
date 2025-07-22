@@ -27,7 +27,6 @@ from ...common.utils import (
 )
 from .utils import format_cluster_info
 from loguru import logger
-from mcp.server.fastmcp import Context as FastMCPContext
 from pydantic import Field
 from typing import Any, Dict, List, Optional
 from typing_extensions import Annotated
@@ -79,7 +78,6 @@ async def modify_db_cluster(
     allow_major_version_upgrade: Annotated[
         Optional[bool], Field(description='Indicates whether major version upgrades are allowed')
     ] = None,
-    ctx: Optional[FastMCPContext] = None,
 ) -> Dict[str, Any]:
     """Modify an existing RDS database cluster configuration.
 
@@ -92,7 +90,6 @@ async def modify_db_cluster(
         port: The port number on which the DB cluster accepts connections
         engine_version: The version number of the database engine to upgrade to
         allow_major_version_upgrade: Indicates whether major version upgrades are allowed
-        ctx: MCP context for logging and state management
 
     Returns:
         Dict[str, Any]: The response from the AWS API

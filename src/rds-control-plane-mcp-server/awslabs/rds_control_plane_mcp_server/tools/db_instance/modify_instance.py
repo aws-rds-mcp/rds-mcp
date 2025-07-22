@@ -27,7 +27,6 @@ from ...common.utils import (
 )
 from .utils import format_instance_info
 from loguru import logger
-from mcp.server.fastmcp import Context as FastMCPContext
 from pydantic import Field
 from typing import Any, Dict, List, Optional
 from typing_extensions import Annotated
@@ -125,7 +124,6 @@ async def modify_db_instance(
         Optional[bool],
         Field(description='Specifies whether the DB instance is publicly accessible'),
     ] = None,
-    ctx: Optional[FastMCPContext] = None,
 ) -> Dict[str, Any]:
     """Modify an existing RDS database instance configuration.
 
@@ -147,7 +145,6 @@ async def modify_db_instance(
         allow_major_version_upgrade: Indicates whether major version upgrades are allowed
         auto_minor_version_upgrade: Indicates that minor version upgrades are applied automatically
         publicly_accessible: Specifies whether the DB instance is publicly accessible
-        ctx: MCP context for logging and state management
 
     Returns:
         Dict[str, Any]: The response from the AWS API

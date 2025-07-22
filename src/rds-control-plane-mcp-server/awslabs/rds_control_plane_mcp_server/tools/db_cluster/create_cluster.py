@@ -29,7 +29,6 @@ from ...common.utils import (
 )
 from .utils import format_cluster_info
 from loguru import logger
-from mcp.server.fastmcp import Context as FastMCPContext
 from pydantic import Field
 from typing import Any, Dict, List, Optional
 from typing_extensions import Annotated
@@ -91,7 +90,6 @@ async def create_db_cluster(
     engine_version: Annotated[
         Optional[str], Field(description='The version number of the database engine to use')
     ] = None,
-    ctx: Optional[FastMCPContext] = None,
 ) -> Dict[str, Any]:
     """Create a new RDS database cluster.
 
@@ -106,7 +104,6 @@ async def create_db_cluster(
         backup_retention_period: The number of days for which automated backups are retained
         port: The port number on which the instances in the DB cluster accept connections
         engine_version: The version number of the database engine to use
-        ctx: MCP context for logging and state management
 
     Returns:
         Dict[str, Any]: The response from the AWS API

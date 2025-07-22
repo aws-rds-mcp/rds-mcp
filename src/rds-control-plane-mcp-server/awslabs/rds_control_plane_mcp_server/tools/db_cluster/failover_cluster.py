@@ -24,7 +24,6 @@ from ...common.utils import (
     format_rds_api_response,
 )
 from loguru import logger
-from mcp.server.fastmcp import Context as FastMCPContext
 from pydantic import Field
 from typing import Any, Dict, Optional
 from typing_extensions import Annotated
@@ -59,7 +58,6 @@ async def failover_db_cluster(
     confirmation_token: Annotated[
         Optional[str], Field(description='Confirmation token for destructive operation')
     ] = None,
-    ctx: Optional[FastMCPContext] = None,
 ) -> Dict[str, Any]:
     """Force a failover for an RDS database cluster.
 
@@ -67,7 +65,6 @@ async def failover_db_cluster(
         db_cluster_identifier: The identifier for the DB cluster
         target_db_instance_identifier: The name of the instance to promote to the primary instance
         confirmation_token: Confirmation token for destructive operation
-        ctx: MCP context for logging and state management
 
     Returns:
         Dict[str, Any]: The response from the AWS API

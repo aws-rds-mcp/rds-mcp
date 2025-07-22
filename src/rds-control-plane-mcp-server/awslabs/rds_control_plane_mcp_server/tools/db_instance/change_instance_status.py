@@ -29,7 +29,6 @@ from ...common.utils import (
     format_rds_api_response,
 )
 from loguru import logger
-from mcp.server.fastmcp import Context as FastMCPContext
 from pydantic import Field
 from typing import Any, Dict, Optional
 from typing_extensions import Annotated
@@ -71,7 +70,6 @@ async def change_instance_status(
     confirmation_token: Annotated[
         Optional[str], Field(description='Confirmation token for destructive operations')
     ] = None,
-    ctx: Optional[FastMCPContext] = None,
 ) -> Dict[str, Any]:
     """Change the status of an RDS database instance.
 
@@ -80,7 +78,6 @@ async def change_instance_status(
         action: Action to perform: "start", "stop", or "reboot"
         force_failover: When rebooting, whether to force a failover to another AZ
         confirmation_token: Confirmation token for destructive operations
-        ctx: MCP context for logging and state management
 
     Returns:
         Dict[str, Any]: The response from the AWS API
